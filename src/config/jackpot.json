@@ -1,0 +1,10 @@
+{
+  "contributionPercent": 0.02,
+  "seedPool": 10000,
+  "initialPool": 10000,
+  "trigger": {
+    "type": "random",
+    "probability": 0.00001
+  }
+}
+

@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slot Engine MVP</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #111a33;
+        --panel-2: #0f1730;
+        --text: #e9ecf5;
+        --muted: #a8b0c7;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+        --accent: #7c5cff;
+        --accent-2: #2ce0a5;
+        --danger: #ff5c7a;
+        --warn: #ffcf5c;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f6f7fb;
+          --panel: #ffffff;
+          --panel-2: #fbfbfd;
+          --text: #111827;
+          --muted: #6b7280;
+          --border: rgba(17, 24, 39, 0.08);
+          --shadow: 0 10px 24px rgba(17, 24, 39, 0.1);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        background: radial-gradient(
+            1200px 500px at 20% 0%,
+            rgba(124, 92, 255, 0.25),
+            rgba(124, 92, 255, 0) 60%
+          ),
+          radial-gradient(
+            1200px 500px at 80% 10%,
+            rgba(44, 224, 165, 0.18),
+            rgba(44, 224, 165, 0) 55%
+          ),
+          var(--bg);
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px 16px;
+        width: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0.2px;
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .grid-layout {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+        flex: 1;
+        align-items: stretch;
+      }
+
+      @media (max-width: 880px) {
+        .grid-layout {
+          grid-template-columns: 1fr;
+          align-content: start;
+        }
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .control {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 220px;
+      }
+
+      .control-label {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .control-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .control-row button {
+        min-height: 42px;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      input {
+        padding: 10px 12px;
+        width: 160px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        outline: none;
+      }
+
+      input:focus {
+        border-color: rgba(124, 92, 255, 0.55);
+        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.16);
+      }
+
+      button {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 650;
+        letter-spacing: 0.2px;
+        transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      button.primary {
+        background: linear-gradient(180deg, rgba(124, 92, 255, 0.95), rgba(124, 92, 255, 0.75));
+        border-color: rgba(124, 92, 255, 0.6);
+      }
+
+      button.primary:hover {
+        background: linear-gradient(180deg, rgba(124, 92, 255, 1), rgba(124, 92, 255, 0.82));
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .pill strong {
+        color: var(--text);
+        font-weight: 750;
+      }
+
+      .pill--big {
+        padding: 12px 14px;
+        font-size: 14px;
+        background: rgba(124, 92, 255, 0.12);
+        border-color: rgba(124, 92, 255, 0.28);
+      }
+
+      .pill--big strong {
+        font-size: 18px;
+        letter-spacing: 0.3px;
+      }
+
+      .pill--big.pill--win strong {
+        color: rgba(124, 92, 255, 1);
+      }
+
+      .pill--big.pill--jackpot strong {
+        color: rgba(44, 224, 165, 1);
+      }
+
+      .pill--big.pill--bonus strong {
+        color: rgba(255, 207, 92, 1);
+      }
+
+      .pills {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .bet-quick {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .bet-quick button {
+        padding: 8px 10px;
+        font-weight: 650;
+      }
+
+      .slot-grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(56px, 1fr));
+        grid-auto-rows: 62px;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .tile {
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        user-select: none;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .tile::after {
+        content: "";
+        position: absolute;
+        inset: -20%;
+        background: radial-gradient(400px 60px at 10% 10%, rgba(255, 255, 255, 0.16), transparent 60%);
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      .tile--W {
+        border-color: rgba(255, 207, 92, 0.45);
+        box-shadow: 0 0 0 1px rgba(255, 207, 92, 0.14) inset;
+      }
+
+      .tile--S {
+        border-color: rgba(44, 224, 165, 0.45);
+        box-shadow: 0 0 0 1px rgba(44, 224, 165, 0.14) inset;
+      }
+
+      .tile--win {
+        border-color: rgba(124, 92, 255, 0.75);
+        box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.2) inset, 0 0 28px rgba(124, 92, 255, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .legend {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .reel-footer {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .reel-footer .legend {
+        margin-top: 0;
+      }
+
+      .legend .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-right: 6px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .dot.wild {
+        border-color: rgba(255, 207, 92, 0.55);
+      }
+
+      .dot.scatter {
+        border-color: rgba(44, 224, 165, 0.55);
+      }
+
+      .dot.win {
+        border-color: rgba(124, 92, 255, 0.75);
+      }
+
+      .error {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 92, 122, 0.35);
+        background: rgba(255, 92, 122, 0.08);
+        color: rgba(255, 92, 122, 0.95);
+        display: none;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .section-title {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: var(--muted);
+        letter-spacing: 0.2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .details {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      details summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        outline: none;
+      }
+
+      pre {
+        margin: 10px 0 0;
+        background: rgba(0, 0, 0, 0.12);
+        border: 1px solid var(--border);
+        padding: 10px;
+        border-radius: 12px;
+        overflow: auto;
+        color: var(--text);
+      }
+
+      .win-pop {
+        animation: pop 280ms ease-out;
+      }
+
+      @keyframes pop {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-1px) scale(1.02);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      .loading {
+        opacity: 0.75;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div>
+          <h1>Slot Engine MVP</h1>
+          <div class="subtitle">Reel-based engine tester (5×3), paylines, bonus, jackpot, simulation</div>
+        </div>
+      </header>
+
+      <div class="grid-layout">
+        <div class="card">
+          <div class="section-title">Spin</div>
+          <div class="control">
+            <div class="control-label">Bet</div>
+            <div class="control-row">
+              <input id="bet" type="number" min="1" value="100" inputmode="numeric" />
+              <button id="spinBtn" class="primary">SPIN</button>
+            </div>
+          </div>
+
+          <div class="bet-quick" style="margin-top: 10px">
+            <span style="color: var(--muted); font-size: 12px; font-weight: 700">Quick bet</span>
+            <button type="button" data-bet="10">10</button>
+            <button type="button" data-bet="50">50</button>
+            <button type="button" data-bet="100">100</button>
+            <button type="button" data-bet="500">500</button>
+            <button type="button" data-bet="1000">1000</button>
+          </div>
+
+          <div id="grid" class="slot-grid" aria-label="Slot grid"></div>
+
+          <div class="reel-footer">
+            <div class="legend">
+              <span><span class="dot wild"></span>W = Wild</span>
+              <span><span class="dot scatter"></span>S = Scatter</span>
+              <span><span class="dot win"></span>Highlighted = Payline win</span>
+            </div>
+            <div class="pills">
+              <div class="pill pill--big pill--win">Win <strong id="win">0</strong></div>
+              <div class="pill pill--big pill--jackpot">Jackpot <strong id="jackpot">0</strong></div>
+              <div class="pill pill--big pill--bonus">Bonus <strong id="bonus">false</strong></div>
+            </div>
+          </div>
+
+          <div id="error" class="error"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Simulation</div>
+          <div class="split">
+            <div class="control">
+              <div class="control-label">Spins</div>
+              <div class="control-row">
+                <input id="spins" type="number" min="1" value="50000" inputmode="numeric" />
+                <button id="simBtn">RUN SIMULATION</button>
+              </div>
+            </div>
+
+            <div class="details">
+              <details>
+                <summary>Last spin details</summary>
+                <pre id="spinOut">{}</pre>
+              </details>
+            </div>
+
+            <div class="details">
+              <details open>
+                <summary>Simulation output</summary>
+                <pre id="simOut">{}</pre>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const betEl = document.getElementById("bet");
+      const spinsEl = document.getElementById("spins");
+      const spinBtn = document.getElementById("spinBtn");
+      const simBtn = document.getElementById("simBtn");
+
+      const gridEl = document.getElementById("grid");
+      const winEl = document.getElementById("win");
+      const jackpotEl = document.getElementById("jackpot");
+      const bonusEl = document.getElementById("bonus");
+      const simOutEl = document.getElementById("simOut");
+      const spinOutEl = document.getElementById("spinOut");
+      const errorEl = document.getElementById("error");
+
+      const SYMBOL_CLASS = {
+        W: "tile--W",
+        S: "tile--S"
+      };
+
+      function setError(message) {
+        if (!message) {
+          errorEl.textContent = "";
+          errorEl.style.display = "none";
+          return;
+        }
+        errorEl.textContent = message;
+        errorEl.style.display = "block";
+      }
+
+      function setLoading(isLoading) {
+        const body = document.body;
+        if (isLoading) {
+          body.classList.add("loading");
+          spinBtn.disabled = true;
+          simBtn.disabled = true;
+          return;
+        }
+        body.classList.remove("loading");
+        spinBtn.disabled = false;
+        simBtn.disabled = false;
+      }
+
+      function computeWinPositions(lineWins) {
+        const positions = new Set();
+        if (!Array.isArray(lineWins)) return positions;
+
+        for (const w of lineWins) {
+          const rows = w?.rows;
+          const count = Number(w?.count);
+          if (!Array.isArray(rows) || rows.length !== 5) continue;
+          if (!Number.isFinite(count) || count <= 0) continue;
+
+          for (let col = 0; col < Math.min(5, count); col += 1) {
+            const row = rows[col];
+            positions.add(`${row}:${col}`);
+          }
+        }
+
+        return positions;
+      }
+
+      function renderGrid(grid, lineWins) {
+        gridEl.innerHTML = "";
+        const winPositions = computeWinPositions(lineWins);
+
+        for (let row = 0; row < 3; row += 1) {
+          for (let col = 0; col < 5; col += 1) {
+            const cell = grid?.[row]?.[col] ?? "";
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            const symbolClass = SYMBOL_CLASS[cell];
+            if (symbolClass) tile.classList.add(symbolClass);
+            if (winPositions.has(`${row}:${col}`)) tile.classList.add("tile--win");
+            tile.textContent = cell;
+            gridEl.appendChild(tile);
+          }
+        }
+      }
+
+      function flashWin() {
+        winEl.classList.remove("win-pop");
+        void winEl.offsetWidth;
+        winEl.classList.add("win-pop");
+      }
+
+      function setPills({ win, jackpot, bonus }) {
+        winEl.textContent = String(win ?? 0);
+        jackpotEl.textContent = String(jackpot ?? 0);
+        bonusEl.textContent = String(Boolean(bonus));
+        flashWin();
+      }
+
+      async function postJson(url, body) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = json?.error || `Request failed (${res.status})`;
+          throw new Error(msg);
+        }
+        return json;
+      }
+
+      function clampBet(bet) {
+        if (!Number.isFinite(bet)) return null;
+        if (bet <= 0) return null;
+        return Math.floor(bet);
+      }
+
+      function initQuickBetButtons() {
+        document.querySelectorAll("[data-bet]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const bet = Number(btn.getAttribute("data-bet"));
+            const clamped = clampBet(bet);
+            if (clamped) betEl.value = String(clamped);
+          });
+        });
+      }
+
+      async function doSpin() {
+        setError("");
+        try {
+          const bet = clampBet(Number(betEl.value));
+          if (!bet) throw new Error("Enter a valid bet (positive number).");
+
+          setLoading(true);
+          const result = await postJson("/spin", { bet });
+          renderGrid(result.grid, result?.details?.lineWins);
+          setPills({ win: result.win, jackpot: result.jackpot, bonus: result.bonus });
+          spinOutEl.textContent = JSON.stringify(result.details ?? {}, null, 2);
+        } catch (e) {
+          setError(e?.message || String(e));
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      spinBtn.addEventListener("click", doSpin);
+      betEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doSpin();
+      });
+
+      simBtn.addEventListener("click", async () => {
+        simOutEl.textContent = "{}";
+        setError("");
+        try {
+          const spins = Math.floor(Number(spinsEl.value));
+          const bet = clampBet(Number(betEl.value));
+
+          if (!Number.isFinite(spins) || spins <= 0) {
+            throw new Error("Enter a valid spin count (positive integer).");
+          }
+          if (!bet) throw new Error("Enter a valid bet (positive number).");
+
+          setLoading(true);
+          const summary = await postJson("/simulate", { spins, bet });
+          const formatted = {
+            ...summary,
+            rtpPercent: `${(Number(summary.rtp) * 100).toFixed(2)}%`,
+            hitFrequencyPercent: `${(Number(summary.hitFrequency) * 100).toFixed(2)}%`
+          };
+          simOutEl.textContent = JSON.stringify(formatted, null, 2);
+        } catch (e) {
+          setError(e?.message || String(e));
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      renderGrid([
+        ["A", "K", "Q", "J", "A"],
+        ["A", "A", "W", "Q", "S"],
+        ["K", "Q", "A", "A", "A"]
+      ]);
+      initQuickBetButtons();
+    </script>
+  </body>
+</html>
